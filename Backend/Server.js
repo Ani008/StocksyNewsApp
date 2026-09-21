@@ -1,7 +1,12 @@
 const express = require('express');
 const app = express();
 
+require("dotenv").config();
+
+const PORT = process.env.PORT || 5000;
+
 app.use(express.json());
+
 app.use((req, res, next)=>{
     console.log(`${req.method} ${req.url}`);
     next();
@@ -16,8 +21,8 @@ app.get("/health", (req,res)=>{
     res.json({"status": "OK"});
 });
 
-app.listen(5000,()=>{
-    console.log("Server is running on port 5000")
+app.listen(PORT,()=>{
+    console.log(`Server is running on port - ${PORT}`);
 })
 
 const articles = [
@@ -53,21 +58,13 @@ app.get("/articles", (req,res)=>{
     res.json(articles);
 });
 
+app.get("/crash-test", (req, res)=>{
+    const x = undefined;
+    x.toLowerCase();
+})
 
-app.post("/articles", (req, res)=>{
-    const {title, category, content} = req.body;
 
-    if(!title || !category || !content){
-        return res.status(400).json({"Message": "Title, Category and Content are required"});
-    }
-
-    const newArticle = {
-        id: articles.length + 1,
-        title,
-        category,
-        content
-    };
-
-    articles.push(newArticle);
-    res.status(201).json(newArticle);
+app.use((err, req, res, next)=>{
+    console.log(err.stack);
+    res.status(500).json({message:"Something Went Wron on our side"});
 });
