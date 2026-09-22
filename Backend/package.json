@@ -11,6 +11,11 @@
   "license": "ISC",
   "dependencies": {
     "dotenv": "^18.0.1",
-    "express": "^5.2.1"
+    "drizzle-orm": "^0.45.3",
+    "express": "^5.2.1",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.11"
   }
 }

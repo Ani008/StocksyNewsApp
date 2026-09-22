@@ -1,4 +1,8 @@
 const express = require('express');
+const {db} = require("./db");
+const {articles} = require("./db/schema");
+const {eq} = require("drizzle-orm");
+
 const app = express();
 
 require("dotenv").config();
@@ -6,11 +10,6 @@ require("dotenv").config();
 const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
-
-app.use((req, res, next)=>{
-    console.log(`${req.method} ${req.url}`);
-    next();
-});
 
 
 app.get("/", (req,res)=>{
@@ -25,44 +24,31 @@ app.listen(PORT,()=>{
     console.log(`Server is running on port - ${PORT}`);
 })
 
-const articles = [
-    {'id': 1, 'title': 'Article 1', 'category': 'Finance', 'content': 'This is the content of Article 1'},
-    {'id': 2, 'title': 'Article 2', 'category': 'Finance', 'content': 'This is the content of Article 2'},
-    {'id': 3, 'title': 'Article 3', 'category': 'Sports', 'content': 'This is the content of Article 3'},
-];
-
-app.get("/articles", (req, res)=>{
-    res.json(articles);
+app.get("/articles", async(req, res, next)=>{
+    const limit = Number(req.query.limit) || 10;
+    const offset = Number(req.query.offset) || 0;
+    try{
+        const allArticles = await db.select().from(articles).limit(limit).offset(offset);
+        res.json(allArticles);
+    } catch (err){
+        next(err);
+    }
 });
 
-app.get("/articles/:id", (req, res)=>{
-    const articleId = Number(req.params.id);
-    const article = articles.find((a)=> a.id === articleId);
+app.get("/articles/:id", async(req, res, next)=>{
+    try{
+        const articleId = Number(req.params.id);
+        const fetchedArticle = await db.select().from(articles).where(eq(articles.id, articleId));
 
-    if(!article){
-        return res.status(404).json({"message": "Article Not Found"});
+        if(fetchedArticle.length===0){
+            return res.status(404).json({message:"Enter Valid Article Id"});
+        }
+        res.json(fetchedArticle[0]);
     }
-    res.json(article);
+    catch(err){
+        next(err);
+    }
 });
-
-app.get("/articles", (req,res)=>{
-    const category = req.query.category;
-
-    if(category){
-        const filtered = articles.filter((a)=> a.category.toLowerCase() === category.toLowerCase());
-        return res.json(filtered);
-    }
-    else{
-        return res.status(404).json({"message": "Category Not Found"});
-    }
-    res.json(articles);
-});
-
-app.get("/crash-test", (req, res)=>{
-    const x = undefined;
-    x.toLowerCase();
-})
-
 
 app.use((err, req, res, next)=>{
     console.log(err.stack);
